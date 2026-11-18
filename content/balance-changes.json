@@ -1,0 +1,18 @@
+{
+  "_aide": "Ajoute une entrée par mise à jour, la plus récente en premier. type : buff | nerf | rework | ajustement. brawler : nom tel qu'affiché en jeu (insensible à la casse). Supprime l'entrée d'exemple quand tu ajoutes les vraies.",
+  "patches": [
+    {
+      "exemple": true,
+      "version": "Exemple",
+      "date": "2026-11-01",
+      "title": "Entrée d'exemple à remplacer par les vraies notes de mise à jour",
+      "source": "https://supercell.com/en/games/brawlstars/blog/",
+      "changes": [
+        { "brawler": "Shelly", "type": "buff", "text": "Dégâts de l'attaque principale augmentés de 300 à 320 par plomb." },
+        { "brawler": "Colt", "type": "nerf", "text": "Vitesse de rechargement passée de 1,5 s à 1,6 s." },
+        { "brawler": "Gene", "type": "rework", "text": "Le gadget « Lampe magique » est entièrement revu." },
+        { "brawler": "Poco", "type": "ajustement", "text": "Portée de l'attaque réduite, mais soins augmentés." }
+      ]
+    }
+  ]
+}

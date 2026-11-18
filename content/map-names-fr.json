@@ -1,0 +1,31 @@
+{
+  "_aide": "Traductions des noms de maps (l'API ne les donne qu'en anglais). Clé = nom anglais exact, valeur = nom français affiché. Ces traductions sont des propositions : corrige-les avec les noms du jeu en français. Une map absente de cette liste reste affichée en anglais ; `npm run collect` liste celles qui manquent.",
+  "noms": {
+    "Hideout": "Planque",
+    "Dry Season": "Saison sèche",
+    "Layer Cake": "Mille-feuille",
+    "Shooting Star": "Étoile filante",
+    "Pinball Dreams": "Rêve de flipper",
+    "Center Stage": "Scène centrale",
+    "Sneaky Fields": "Champs sournois",
+    "Triple Dribble": "Triple dribble",
+    "Undermine": "Sous la mine",
+    "Hard Rock Mine": "Mine hard rock",
+    "Gem Fort": "Fort aux gemmes",
+    "Double Swoosh": "Double swoosh",
+    "Bridge Too Far": "Un pont trop loin",
+    "Safe Zone": "Zone sécurisée",
+    "Hot Potato": "Patate chaude",
+    "Kaboom Canyon": "Canyon Kaboum",
+    "Parallel Plays": "Jeux parallèles",
+    "Dueling Beetles": "Duel de scarabées",
+    "Ring of Fire": "Cercle de feu",
+    "Open Business": "Commerce ouvert",
+    "Out in the Open": "À découvert",
+    "Flowing Springs": "Sources vives",
+    "New Horizons": "Nouveaux horizons",
+    "Flaring Phoenix": "Phénix flamboyant",
+    "Goldarm Gulch": "Ravin de Goldarm",
+    "Belle's Rock": "Rocher de Belle"
+  }
+}

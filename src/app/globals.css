@@ -1,26 +1,63 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-bg: #0b0e1a;
+  --color-surface: #141a2e;
+  --color-surface-2: #1c2440;
+  --color-line: #2a3355;
+  --color-ink: #e8ecf8;
+  --color-muted: #8b95b5;
+  --color-accent: #ffc93c;
+  --color-accent-2: #4cc9f0;
+  --color-win: #22c55e;
+  --color-loss: #ef4444;
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display-face), var(--font-body), sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(1200px 500px at 10% -10%, #1d2a5c55, transparent 60%),
+    radial-gradient(900px 400px at 100% 0%, #5c1d4a33, transparent 60%),
+    var(--color-bg);
+  color: var(--color-ink);
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 14px;
+}
+
+.h-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
+}
+
+table.stats {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+table.stats th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--color-line);
+}
+table.stats td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #ffffff0d;
+  font-variant-numeric: tabular-nums;
+}
+table.stats tr:hover td {
+  background: #ffffff06;
 }
