@@ -16,7 +16,7 @@ Supercell : des centaines de milliers de parties des meilleurs joueurs du monde 
   brawler est joué).
 
 ### Maps et meilleures compos
-- Toutes les maps jouées, rangées par mode, avec leurs **noms en français**.
+- Toutes les maps jouées, rangées par mode, avec leurs **noms français officiels** (ceux du jeu).
 - Pour chaque map : **tier list propre à la map**, **meilleures compos à 3** (ou meilleurs
   duos et trios en Survivant) et détail par brawler.
 
@@ -39,10 +39,13 @@ L'outil pour la sélection en classé : tu entres la map, puis les bans et les p
 - les **compos qui gagnent** réellement sur cette map et qui restent possibles.
 
 Pour aller vite pendant la partie :
-- **Ordre du draft** : choisis « 1er pick : Nous / Eux » ; après les 6 bans, la bonne case
-  se sélectionne toute seule (ordre du classé : 1-2-2-1). « Annuler » retire le dernier ajout.
-- **Grille triée** du plus fort au plus faible pour le draft en cours, recherche (Entrée
-  ajoute le premier résultat).
+- **C'est toi qui choisis où ajouter** : clique sur Bans, Ton équipe ou Adversaires ; la
+  sélection ne change jamais toute seule. « Annuler » retire le dernier ajout.
+- **Ordre du draft** (facultatif) : avec « 1er pick : Nous / Eux », un point indique à qui
+  c'est le tour (ordre du classé : 1-2-2-1), sans changer ta sélection.
+- **Grille groupée par classe** (Tank, Assassinat, Dégâts bruts, Tir d'élite, Artillerie,
+  Contrôle, Soutien) ou en une seule liste, triée du plus fort au plus faible pour le draft en
+  cours ou de A à Z. Recherche en français ou en anglais (Entrée ajoute le premier résultat).
 - **Sur mobile**, les bans et picks restent collés en haut de l'écran avec les conseils
   rapides juste en dessous : un toucher pour ajouter.
 
@@ -99,7 +102,8 @@ perso**, gratuite :
    ```env
    BS_API_KEY=cle_maison,cle_ecole
    ```
-3. **Lance la collecte** :
+3. **Lance la collecte** : bouton **« Mettre à jour »** en haut à droite du site (il affiche
+   la progression et peut l'arrêter), ou dans un terminal :
    ```bash
    npm run collect
    ```
@@ -127,16 +131,22 @@ ni dans un message.
 | `BS_CONCURRENCY` | Requêtes en parallèle | `8` |
 | `BS_RETENTION_DAYS` | Durée de conservation des parties (jours) | `60` |
 | `BS_DEFAULT_DAYS` | Période affichée par défaut (3, 7, 14 ou 30) | `14` |
+| `BS_COLLECT_BUTTON` | `0` cache le bouton « Mettre à jour » (si le site est en ligne) | activé |
 
 ## Contribuer au contenu
 
-Deux parties du site sont écrites à la main, car aucune API ne les fournit :
+Les **noms français des brawlers et des maps** et les **classes des brawlers** viennent des
+textes officiels du jeu, republiés par [BrawlAPI](https://api.brawlapi.com) :
+`content/noms-fr.json` est régénéré par `npm run noms` et au début de chaque collecte (ne le
+modifie pas à la main).
+
+À la main :
 
 - **Buffs et nerfs** : `content/balance-changes.json` (relu à chaque requête, pas besoin de
   redémarrer). Supprime l'entrée `"exemple": true` quand tu ajoutes les vraies notes de patch.
-- **Noms des maps en français** : `content/map-names-fr.json` (nom anglais → nom français).
-  Certains noms sont des propositions à vérifier en jeu ; une map absente reste en anglais.
-  `npm run collect` liste à la fin les maps sans traduction.
+- **Compléments de noms** : `content/noms-fr-manuels.json`, prioritaire sur le fichier
+  généré, pour les nouveautés pas encore republiées (nom français d'une map ou d'un brawler,
+  classe d'un nouveau brawler). `npm run collect` liste à la fin les maps sans nom français.
 
 ## Comment les stats sont calculées
 

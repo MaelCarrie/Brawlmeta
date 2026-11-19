@@ -7,9 +7,7 @@ import { createHash } from "node:crypto";
 import { bumpDataVersion, clearBattles, getDb, getMeta, setMeta } from "../src/lib/db.ts";
 import { apiFetch, hasApiKey } from "../src/lib/api-key.ts";
 import { storePersonalBattles, trackedPlayers } from "../src/lib/personal.ts";
-import mapNamesFr from "../content/map-names-fr.json" with { type: "json" };
-
-const FR_MAP_NAMES: Record<string, string> = mapNamesFr.noms;
+import { updateNames } from "./update-names.ts";
 
 const API = "https://api.brawlstars.com/v1";
 
@@ -88,6 +86,13 @@ async function main() {
     clearBattles();
     db.exec("DELETE FROM maps; DELETE FROM brawlers;");
     setMeta("demo", "0");
+  }
+
+  // 0. Noms officiels en français et classes des brawlers (pas bloquant si indisponible).
+  try {
+    await updateNames();
+  } catch (e) {
+    console.warn("Noms français non mis à jour :", e instanceof Error ? e.message : e);
   }
 
   // 1. Liste des brawlers
@@ -267,15 +272,19 @@ async function main() {
   const total = (db.prepare("SELECT COUNT(*) AS n FROM battles").get() as { n: number }).n;
   console.log(`\nTerminé : ${added} nouvelles parties, ${total} au total.`);
   console.log("Types de parties rencontrés :", Object.fromEntries(typesSeen));
+  // Import tardif : les noms ont pu être mis à jour au début de la collecte.
+  const { hasFrenchName } = await import("../src/lib/format.ts");
   const missing = (
     db.prepare("SELECT DISTINCT m.name FROM maps m JOIN battles b ON b.map_id = m.id ORDER BY m.name").all() as {
       name: string;
     }[]
   )
     .map((r) => r.name)
-    .filter((n) => !(n in FR_MAP_NAMES));
+    .filter((n) => !hasFrenchName(n));
   if (missing.length) {
-    console.log(`\nMaps sans nom français (à ajouter dans content/map-names-fr.json) :\n  ${missing.join("\n  ")}`);
+    console.log(
+      `\nMaps sans nom français officiel pour l'instant (tu peux les ajouter dans content/noms-fr-manuels.json) :\n  ${missing.join("\n  ")}`,
+    );
   }
   if (added === 0) {
     console.log(

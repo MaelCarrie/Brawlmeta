@@ -18,12 +18,12 @@ export function BrawlerIcon({
   const img = (
     <SafeImg
       src={brawlerImg(id)}
-      alt={brawlerName(name)}
+      alt={brawlerName(name, id)}
       className={`rounded-lg bg-surface-2 object-contain ${className}`}
     />
   );
   const box = (
-    <span title={brawlerName(name)} className="inline-block shrink-0" style={{ width: size, height: size }}>
+    <span title={brawlerName(name, id)} className="inline-block shrink-0" style={{ width: size, height: size }}>
       <span className="block h-full w-full [&>*]:h-full [&>*]:w-full">{img}</span>
     </span>
   );

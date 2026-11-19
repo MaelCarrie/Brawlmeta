@@ -27,7 +27,7 @@ export function BrawlerTable({ stats, limit }: { stats: BrawlerStat[]; limit?: n
               <td>
                 <Link href={`/brawlers/${s.id}`} className="flex items-center gap-3 font-medium hover:text-accent">
                   <BrawlerIcon id={s.id} name={s.name} size={32} link={false} />
-                  {brawlerName(s.name)}
+                  {brawlerName(s.name, s.id)}
                 </Link>
               </td>
               <td><TierBadge tier={s.tier} /></td>

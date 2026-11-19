@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Lilita_One } from "next/font/google";
 import Link from "next/link";
 import { Suspense } from "react";
+import { CollectButton } from "@/components/collect-button";
 import { DemoBanner } from "@/components/demo-banner";
 import "./globals.css";
 
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 </Link>
               ))}
             </nav>
+            <CollectButton />
           </div>
         </header>
         <Suspense>

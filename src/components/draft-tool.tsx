@@ -6,6 +6,8 @@ import { SafeImg } from "./safe-img";
 import type { DraftResult, Factor } from "@/lib/draft";
 import type { OwnedBrawler, PlayerProfile } from "@/lib/player";
 import {
+  BRAWLER_CLASSES,
+  brawlerClass,
   brawlerImg,
   brawlerName,
   mapImg,
@@ -40,7 +42,10 @@ const ORDER: Record<"nous" | "eux", Slot[]> = {
   eux: ["enemies", "allies", "allies", "enemies", "enemies", "allies"],
 };
 
-/** Catégorie à remplir ensuite, d'après l'ordre du draft (null = draft terminé). */
+/**
+ * À qui c'est le tour d'après l'ordre du draft (null = draft terminé).
+ * Sert seulement d'indication : la catégorie où on ajoute ne change jamais toute seule.
+ */
 function nextSlot(p: Picks, first: FirstPick): Slot | null {
   if (p.bans.length < 6) return "bans";
   if (first) {
@@ -88,9 +93,9 @@ function Icon({
     <span
       className={`relative block overflow-hidden rounded-lg bg-surface-2 [&>*:first-child]:h-full [&>*:first-child]:w-full ${dim ? "opacity-25 grayscale" : ""}`}
       style={{ width: size, height: size }}
-      title={brawlerName(b.name) + (owned ? ` · niveau ${owned.power}` : "")}
+      title={brawlerName(b.name, b.id) + (owned ? ` · niveau ${owned.power}` : "")}
     >
-      <SafeImg src={brawlerImg(b.id)} alt={brawlerName(b.name)} className="object-contain" />
+      <SafeImg src={brawlerImg(b.id)} alt={brawlerName(b.name, b.id)} className="object-contain" />
       {low && (
         <span className="absolute bottom-0 right-0 rounded-tl-md bg-black/75 px-1 text-[10px] font-bold leading-4 text-accent">
           {owned.power}
@@ -119,9 +124,11 @@ export function DraftTool({
   const [picks, setPicks] = useState<Picks>(EMPTY);
   const [history, setHistory] = useState<{ slot: Slot; id: number }[]>([]);
   const [firstPick, setFirstPick] = useState<FirstPick>(null);
-  const [manualTarget, setManualTarget] = useState<Slot | null>(null);
+  // Catégorie où l'on ajoute : c'est toujours l'utilisateur qui la choisit.
+  const [target, setTarget] = useState<Slot>("bans");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"score" | "nom">("score");
+  const [grouped, setGrouped] = useState(true);
   const [result, setResult] = useState<DraftResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [restored, setRestored] = useState(false);
@@ -143,6 +150,7 @@ export function DraftTool({
     if (store.get("bm-only-mine") === "0") setOnlyMine(false);
     const s = store.get("bm-sort");
     if (s === "nom" || s === "score") setSortBy(s);
+    if (store.get("bm-grouped") === "0") setGrouped(false);
     setRestored(true);
   }, [initialMap, maps]);
   useEffect(() => {
@@ -152,16 +160,16 @@ export function DraftTool({
     store.set("bm-first", firstPick);
     store.set("bm-only-mine", onlyMine ? "1" : "0");
     store.set("bm-sort", sortBy);
-  }, [restored, queue, mapId, firstPick, onlyMine, sortBy]);
+    store.set("bm-grouped", grouped ? "1" : "0");
+  }, [restored, queue, mapId, firstPick, onlyMine, sortBy, grouped]);
 
   const owned = useMemo(() => (player ? new Map(player.brawlers.map((b) => [b.id, b])) : null), [player]);
   const useOwned = Boolean(owned && onlyMine);
 
-  // La catégorie active suit l'ordre du draft, sauf si on en a choisi une à la main.
-  const auto = nextSlot(picks, firstPick);
-  const done = auto === null;
-  const target: Slot =
-    manualTarget && picks[manualTarget].length < slotInfo(manualTarget).max ? manualTarget : (auto ?? "allies");
+  // Tour indiqué par l'ordre du draft (indication seulement).
+  const turn = nextSlot(picks, firstPick);
+  const done = SLOTS.every((s) => picks[s.key].length >= s.max);
+  const targetFull = picks[target].length >= slotInfo(target).max;
   const taken = new Set([...picks.bans, ...picks.allies, ...picks.enemies]);
 
   useEffect(() => {
@@ -197,13 +205,11 @@ export function DraftTool({
     if (taken.has(id) || picks[slot].length >= slotInfo(slot).max) return;
     setPicks({ ...picks, [slot]: [...picks[slot], id] });
     setHistory([...history, { slot, id }]);
-    setManualTarget(null);
   }
 
   function remove(slot: Slot, id: number) {
     setPicks({ ...picks, [slot]: picks[slot].filter((x) => x !== id) });
     setHistory(history.filter((h) => h.id !== id));
-    setManualTarget(slot);
   }
 
   function undo() {
@@ -211,36 +217,46 @@ export function DraftTool({
     if (!last) return;
     setPicks({ ...picks, [last.slot]: picks[last.slot].filter((x) => x !== last.id) });
     setHistory(history.slice(0, -1));
-    setManualTarget(null);
   }
 
   function reset() {
     setPicks(EMPTY);
     setHistory([]);
-    setManualTarget(null);
+    setTarget("bans");
     setSearch("");
   }
 
   const q = searchKey(search.trim());
   const scores = result?.scores ?? {};
   const grid = brawlers
-    .filter((b) => !q || searchKey(brawlerName(b.name), b.name).includes(q))
+    .filter((b) => !q || searchKey(brawlerName(b.name, b.id), b.name).includes(q))
     .sort((a, b) => {
-      if (sortBy === "nom") return brawlerName(a.name).localeCompare(brawlerName(b.name), "fr");
+      if (sortBy === "nom") return brawlerName(a.name, a.id).localeCompare(brawlerName(b.name, b.id), "fr");
       // Brawlers déjà pris à la fin, les autres par score décroissant.
       const ta = taken.has(a.id) ? 1 : 0;
       const tb = taken.has(b.id) ? 1 : 0;
       return ta - tb || (scores[b.id] ?? 0) - (scores[a.id] ?? 0);
     });
-  const name = (id: number) => brawlerName(byId.get(id)?.name ?? String(id));
+  // Groupes par classe (Tank, Soutien…), chacun trié comme la grille.
+  const groups = grouped
+    ? BRAWLER_CLASSES.map((c) => ({ ...c, list: grid.filter((b) => brawlerClass(b.id) === c.key) })).filter(
+        (g) => g.list.length > 0,
+      )
+    : [{ key: "tous", label: "", list: grid }];
+  const name = (id: number) => {
+    const b = byId.get(id);
+    return b ? brawlerName(b.name, b.id) : String(id);
+  };
   const t = slotInfo(target);
-  const turnLabel = done
-    ? "Draft terminé"
-    : target === "bans"
-      ? `Bans (${picks.bans.length}/6)`
-      : target === "allies"
-        ? "À ton équipe de choisir"
-        : "Aux adversaires de choisir";
+  const turnHint = !firstPick || done
+    ? null
+    : turn === "bans"
+      ? "Ordre du draft : bans"
+      : turn === "allies"
+        ? "Ordre du draft : à ton équipe"
+        : turn === "enemies"
+          ? "Ordre du draft : aux adversaires"
+          : null;
   const quick = result ? result.recommendations.slice(0, 6) : [];
 
   return (
@@ -256,10 +272,7 @@ export function DraftTool({
               1er pick
               <Pills
                 value={firstPick}
-                onChange={(v) => {
-                  setFirstPick(v);
-                  setManualTarget(null);
-                }}
+                onChange={setFirstPick}
                 options={[
                   { value: "nous", label: "Nous" },
                   { value: "eux", label: "Eux" },
@@ -274,8 +287,17 @@ export function DraftTool({
         {/* Emplacements : collés en haut de l'écran sur mobile */}
         <div className="sticky top-0 z-20 -mx-4 space-y-2 border-b border-line bg-bg/95 px-4 py-2 backdrop-blur lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
           <div className="flex items-center gap-2 text-sm">
-            <span className="min-w-0 font-semibold leading-tight" style={{ color: done ? undefined : t.color }}>
-              {turnLabel}
+            <span className="min-w-0 leading-tight">
+              {done ? (
+                <span className="font-semibold">Draft terminé</span>
+              ) : (
+                <>
+                  <span className="text-muted">Ajout dans : </span>
+                  <b style={{ color: t.color }}>{t.label}</b>
+                  {targetFull && <span className="text-muted"> (complet, choisis une autre catégorie)</span>}
+                </>
+              )}
+              {turnHint && <span className="block text-xs text-muted">{turnHint}</span>}
             </span>
             <button
               onClick={undo}
@@ -291,19 +313,24 @@ export function DraftTool({
           <div className="grid grid-cols-3 gap-2">
             {SLOTS.map((s) => {
               const size = s.key === "bans" ? 28 : 40;
-              const active = target === s.key && !done;
+              const active = target === s.key;
+              const theirTurn = Boolean(firstPick) && turn === s.key && !done;
               return (
                 <div
                   key={s.key}
                   role="button"
                   tabIndex={0}
-                  onClick={() => setManualTarget(s.key)}
-                  onKeyDown={(e) => e.key === "Enter" && setManualTarget(s.key)}
-                  className={`card cursor-pointer p-2 transition sm:p-3 ${active ? "ring-2" : "opacity-80 hover:opacity-100"}`}
-                  style={active ? ({ "--tw-ring-color": s.color } as React.CSSProperties) : undefined}
+                  aria-pressed={active}
+                  onClick={() => setTarget(s.key)}
+                  onKeyDown={(e) => e.key === "Enter" && setTarget(s.key)}
+                  className={`card cursor-pointer p-2 transition sm:p-3 ${active ? "ring-2" : "opacity-70 hover:opacity-100"}`}
+                  style={active ? ({ "--tw-ring-color": s.color, background: `${s.color}14` } as React.CSSProperties) : undefined}
                 >
                   <span className="mb-1.5 flex items-center justify-between gap-1 text-xs font-semibold sm:text-sm" style={{ color: s.color }}>
-                    <span className="truncate">{s.label}</span>
+                    <span className="truncate">
+                      {s.label}
+                      {theirTurn && <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full align-middle" style={{ background: s.color }} title="À jouer d'après l'ordre du draft" />}
+                    </span>
                     <span className="text-muted">{picks[s.key].length}/{s.max}</span>
                   </span>
                   <span className="flex flex-wrap gap-1">
@@ -383,7 +410,7 @@ export function DraftTool({
                 // Entrée = ajoute le premier résultat disponible.
                 if (e.key !== "Enter") return;
                 const first = grid.find((b) => !taken.has(b.id));
-                if (first) {
+                if (first && !targetFull) {
                   add(target, first.id);
                   setSearch("");
                 }
@@ -399,27 +426,67 @@ export function DraftTool({
                 { value: "nom", label: "A-Z" },
               ]}
             />
+            <Pills
+              value={grouped ? "classe" : "tous"}
+              onChange={(v) => setGrouped(v === "classe")}
+              options={[
+                { value: "classe", label: "Par classe" },
+                { value: "tous", label: "Tous" },
+              ]}
+            />
+          </div>
+          <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-muted">
+            <span>Ajouter à :</span>
+            {SLOTS.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => setTarget(s.key)}
+                className={`rounded-md border px-2 py-1 font-semibold transition ${target === s.key ? "" : "border-line opacity-60 hover:opacity-100"}`}
+                style={target === s.key ? { borderColor: s.color, color: s.color, background: `${s.color}1f` } : { color: s.color }}
+              >
+                {s.label} {picks[s.key].length}/{s.max}
+              </button>
+            ))}
           </div>
           <p className="mb-2 text-xs text-muted">
-            Toucher = ajouter à <b style={{ color: t.color }}>{t.label}</b>
+            {targetFull ? (
+              <span className="text-accent">{t.label} : complet. Choisis une autre catégorie pour continuer.</span>
+            ) : (
+              <>
+                Toucher = ajouter à <b style={{ color: t.color }}>{t.label}</b>
+              </>
+            )}
             {sortBy === "score" && " · du plus fort au plus faible dans ce draft"}
             {owned && " · chiffre = niveau de ton brawler s'il n'est pas au max · pâle = pas débloqué"}
           </p>
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(52px,1fr))] gap-1.5">
-            {grid.map((b) => {
-              const mine = owned?.get(b.id);
-              const locked = Boolean(owned && !mine && target === "allies");
-              return (
-                <button
-                  key={b.id}
-                  disabled={taken.has(b.id)}
-                  onClick={() => add(target, b.id)}
-                  className={`transition enabled:hover:scale-110 disabled:cursor-not-allowed ${locked ? "opacity-40" : ""}`}
-                >
-                  <Icon b={b} size={52} dim={taken.has(b.id)} owned={mine} />
-                </button>
-              );
-            })}
+          <div className="space-y-3">
+            {groups.map((g) => (
+              <div key={g.key}>
+                {g.label && (
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted">
+                    {g.label} <span className="font-normal">· {g.list.length}</span>
+                  </p>
+                )}
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(52px,1fr))] gap-1.5">
+                  {g.list.map((b) => {
+                    const mine = owned?.get(b.id);
+                    const locked = Boolean(owned && !mine && target === "allies");
+                    return (
+                      <button
+                        key={b.id}
+                        disabled={taken.has(b.id) || targetFull}
+                        onClick={() => add(target, b.id)}
+                        title={brawlerName(b.name, b.id)}
+                        className={`transition enabled:hover:scale-110 disabled:cursor-not-allowed ${locked ? "opacity-40" : ""}`}
+                      >
+                        <Icon b={b} size={52} dim={taken.has(b.id)} owned={mine} />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            {grid.length === 0 && <p className="text-sm text-muted">Aucun brawler trouvé.</p>}
           </div>
         </div>
       </div>
@@ -440,7 +507,7 @@ export function DraftTool({
                 return (
                   <button key={id} onClick={() => !mine && add("allies", id)} className="text-center" disabled={mine}>
                     <Icon b={b} size={64} owned={owned?.get(id)} />
-                    <span className="mt-1 block text-xs">{brawlerName(b.name)}</span>
+                    <span className="mt-1 block text-xs">{brawlerName(b.name, b.id)}</span>
                     {!mine && <span className="text-[10px] text-accent-2">+ choisir</span>}
                   </button>
                 );
@@ -483,7 +550,7 @@ export function DraftTool({
                     <div className="min-w-0 flex-1 text-sm">
                       <div className="flex items-baseline justify-between gap-2">
                         <Link href={`/brawlers/${r.id}`} className="font-semibold hover:text-accent">
-                          {brawlerName(b.name)}
+                          {brawlerName(b.name, b.id)}
                         </Link>
                         <span className="font-bold">{pct(r.score)}</span>
                       </div>

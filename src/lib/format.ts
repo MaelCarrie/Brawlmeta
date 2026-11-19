@@ -1,16 +1,48 @@
 // Utilitaires d'affichage partagés (client + serveur).
 
-import mapNamesFr from "../../content/map-names-fr.json" with { type: "json" };
+import nomsFr from "../../content/noms-fr.json" with { type: "json" };
+import nomsManuels from "../../content/noms-fr-manuels.json" with { type: "json" };
 
-const FR_MAP_NAMES: Record<string, string> = mapNamesFr.noms;
+// Noms officiels du jeu en français (générés par `npm run noms`), complétés à la main.
+type Manual = { brawlers: Record<string, { nom?: string; classe?: string }>; maps: Record<string, string> };
+const MANUAL = nomsManuels as Manual;
+
+/** "Belle's Rock" et "Belles Rock" donnent la même clé. */
+const nameKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const FR_MAPS = new Map<string, string>();
+for (const [en, fr] of [...Object.entries(nomsFr.maps), ...Object.entries(MANUAL.maps)]) FR_MAPS.set(nameKey(en), fr);
+
+const FR_BRAWLERS = new Map<string, string>();
+const CLASS_BY_ID = new Map<number, string>();
+for (const [id, b] of Object.entries(nomsFr.brawlers)) {
+  FR_BRAWLERS.set(nameKey(b.en), MANUAL.brawlers[id]?.nom ?? b.nom);
+  const c = MANUAL.brawlers[id]?.classe ?? b.classe;
+  if (c) CLASS_BY_ID.set(Number(id), c);
+}
+for (const [id, b] of Object.entries(MANUAL.brawlers)) if (b.classe) CLASS_BY_ID.set(Number(id), b.classe);
+const FR_BRAWLERS_BY_ID = new Map(
+  Object.entries(MANUAL.brawlers).flatMap(([id, b]) => (b.nom ? [[Number(id), b.nom] as const] : [])),
+);
 
 /** Nom français de la map (ou le nom anglais si pas encore traduit). */
 export function mapName(name: string): string {
-  return FR_MAP_NAMES[name] ?? name;
+  return FR_MAPS.get(nameKey(name)) ?? name;
 }
 
 export function hasFrenchName(name: string): boolean {
-  return name in FR_MAP_NAMES;
+  return FR_MAPS.has(nameKey(name));
+}
+
+/** Classes de brawlers (noms du jeu), dans l'ordre d'affichage. */
+export const BRAWLER_CLASSES: { key: string; label: string }[] = [
+  ...Object.entries(nomsFr.classes).map(([key, label]) => ({ key, label })),
+  { key: "autre", label: "Autres" },
+];
+
+/** Classe du brawler (tank, support…), « autre » si inconnue. */
+export function brawlerClass(id: number): string {
+  return CLASS_BY_ID.get(id) ?? "autre";
 }
 
 /** Texte de recherche : nom français + nom anglais, sans accents ni majuscules. */
@@ -49,8 +81,17 @@ export function modeInfo(mode: string) {
   return MODES[mode] ?? { label: mode, color: "#64748b" };
 }
 
-/** "EL PRIMO" -> "El Primo", "MR. P" -> "Mr. P", "8-BIT" -> "8-Bit" */
-export function brawlerName(raw: string): string {
+/**
+ * Nom français officiel du brawler à partir de son nom anglais ("EL PRIMO" -> "El Costo").
+ * Un brawler pas encore traduit garde son nom anglais en minuscules ("MR. P" -> "Mr. P").
+ */
+export function brawlerName(raw: string, id?: number): string {
+  const fr = (id !== undefined && FR_BRAWLERS_BY_ID.get(id)) || FR_BRAWLERS.get(nameKey(raw));
+  return fr || englishName(raw);
+}
+
+/** Nom anglais de l'API mis en minuscules : "MR. P" -> "Mr. P", "8-BIT" -> "8-Bit". */
+export function englishName(raw: string): string {
   return raw
     .toLowerCase()
     .replace(/(^|[\s\-.&])([a-zà-ÿ])/g, (_, sep: string, c: string) => sep + c.toUpperCase());

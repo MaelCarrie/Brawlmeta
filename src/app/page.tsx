@@ -65,7 +65,7 @@ async function Dashboard() {
             <Link key={s.id} href={`/brawlers/${s.id}`} className="card flex items-center gap-3 p-3 transition hover:border-accent/60">
               <BrawlerIcon id={s.id} name={s.name} size={48} link={false} />
               <span className="flex-1">
-                <span className="block font-semibold">{brawlerName(s.name)}</span>
+                <span className="block font-semibold">{brawlerName(s.name, s.id)}</span>
                 <span className="text-xs text-muted">
                   <WinRate value={s.winRate} /> · présence {pct(s.pickRate)}
                 </span>

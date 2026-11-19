@@ -1,0 +1,9 @@
+{
+  "_aide": "Compléments à noms-fr.json (généré automatiquement), prioritaires sur lui. À utiliser pour les nouveautés pas encore présentes dans les fichiers du jeu republiés : ajoute le nom français d'un brawler (par id) ou d'une map (par nom anglais exact), ou la classe d'un brawler (tank, assassin, damage_dealer, marksman, artillery, controller, support). `npm run collect` liste les maps encore sans nom français.",
+  "brawlers": {
+    "16000111": { "classe": "artillery" },
+    "16000112": { "classe": "marksman" },
+    "16000113": { "classe": "damage_dealer" }
+  },
+  "maps": {}
+}

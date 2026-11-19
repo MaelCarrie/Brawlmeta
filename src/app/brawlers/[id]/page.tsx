@@ -6,7 +6,7 @@ import { PatchChange } from "@/components/patch-change";
 import { FilterBar, filterHref } from "@/components/filter-bar";
 import { BrawlerIcon, Loading, ModeBadge, TierBadge, WinRate } from "@/components/ui";
 import { changesForBrawler } from "@/lib/balance";
-import { brawlerName, formatDate, isShowdown, mapName, modeInfo, pct, queueLabel, SHOWDOWN_NOTE, signedPct, type Filter } from "@/lib/format";
+import { BRAWLER_CLASSES, brawlerClass, brawlerName, englishName, formatDate, isShowdown, mapName, modeInfo, pct, queueLabel, SHOWDOWN_NOTE, signedPct, type Filter } from "@/lib/format";
 import { allBrawlers, brawlerInfo, brawlerMaps, brawlerStats, pairStats, parseFilter, shrink } from "@/lib/stats";
 import { availableModes } from "@/lib/stats";
 
@@ -54,7 +54,11 @@ async function BrawlerContent({ params, searchParams }: PageProps<"/brawlers/[id
       <div className="mb-8 mt-3 flex flex-wrap items-center gap-5">
         <BrawlerIcon id={id} name={info.name} size={96} link={false} />
         <div className="flex-1">
-          <h1 className="h-display text-5xl">{brawlerName(info.name)}</h1>
+          <h1 className="h-display text-5xl">{brawlerName(info.name, info.id)}</h1>
+          <p className="text-sm text-muted">
+            {BRAWLER_CLASSES.find((c) => c.key === brawlerClass(info.id))?.label}
+            {brawlerName(info.name, info.id) !== englishName(info.name) && <> · en anglais : {englishName(info.name)}</>}
+          </p>
           {me ? (
             <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
               <span className="flex items-center gap-2">Tier <TierBadge tier={me.tier} /></span>
@@ -145,7 +149,7 @@ function RelRows({ rows, names }: { rows: Rel[]; names: Map<number, string> }) {
       {rows.map((r) => (
         <li key={r.id} className="flex items-center gap-2">
           <BrawlerIcon id={r.id} name={names.get(r.id) ?? ""} size={30} />
-          <span className="font-medium">{brawlerName(names.get(r.id) ?? String(r.id))}</span>
+          <span className="font-medium">{brawlerName(names.get(r.id) ?? String(r.id), r.id)}</span>
           <span className={`ml-auto font-semibold ${r.delta >= 0 ? "text-win" : "text-loss"}`}>{signedPct(r.delta)}</span>
           <span className="w-20 text-right text-xs text-muted">{r.games} parties</span>
         </li>

@@ -80,7 +80,8 @@ CREATE TABLE IF NOT EXISTS player_battles (
 `;
 
 export function dbPath(): string {
-  return process.env.BS_DB_PATH ?? path.join(process.cwd(), "data", "brawl.db");
+  // turbopackIgnore : sinon le serveur de dev surveille la base et recharge la page en boucle.
+  return process.env.BS_DB_PATH ?? path.join(/* turbopackIgnore: true */ process.cwd(), "data", "brawl.db");
 }
 
 let instance: DatabaseSync | null = null;
