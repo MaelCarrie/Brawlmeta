@@ -75,8 +75,11 @@ export function startCollect(): { ok: boolean; error?: string } {
   if (!hasApiKey) return { ok: false, error: "BS_API_KEY manquant dans .env." };
   if (state.child) return { ok: false, error: "Une collecte est déjà en cours." };
 
-  const child = spawn(process.execPath, ["--env-file-if-exists=.env", path.join("scripts", "collect.ts")], {
-    cwd: process.cwd(),
+  // Le script est lancé depuis le dossier courant (celui du site), sans référence explicite
+  // à ce dossier : sinon Turbopack l'analyse en entier (base de données comprise) et la relit
+  // à chaque écriture de la collecte, ce qui bloque la compilation en mode dev.
+  const script = path.join(/* turbopackIgnore: true */ "scripts", "collect.ts");
+  const child = spawn(process.execPath, ["--env-file-if-exists=.env", script], {
     env: process.env,
     stdio: ["ignore", "pipe", "pipe"],
   });
